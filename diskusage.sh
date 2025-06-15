@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# diskusage v1.0.1
+
 logfile="$HOME/.diskusage.txt"
 
 df -h -BM /
