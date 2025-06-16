@@ -1,5 +1,6 @@
 #!/bin/bash
-# Run in backgroud: nohup ./ram_watchdog.sh [OPTIONS] &
+
+RAMWATCHDOGVERSION="v0.1.7"
 
 # Defaults
 PROGRAM_NAME=""
@@ -11,20 +12,21 @@ LIMIT_M_SET=0
 ALL_USERS=false
 SIGKILL=false
 
-HELPMESSAGE="Usage: $0 [OPTIONS]\n
-            Options:\n
+HELPMESSAGE="Usage: $0 [OPTIONS]\n\
+            Options:\n\
                 --name|-n <program> Program name to monitor. 
-                                    Default monitors all proccesses.\n
+                                    Default monitors all proccesses.\n\
                 --limitG|-lg <GB> || --limitM|-lm <MB>  Limit of RAM usage allowed in either GB or MB. 
-                                                        Default is 8 GB.\n
+                                                        Default is 8 GB.\n\
                 --interval|-i <seconds> Time between monitor cycles. 
-                                        Default is 5s.\n
+                                        Default is 5s.\n\
                 --timeout|-t <seconds> Time to wait before giving up on SIGTERM. 
-                                        Default is 10s.\n
+                                        Default is 10s.\n\
                 --allusers|-au Monitor for the proccesses of all users. 
-                                Default is false.\n
+                                Default is false.\n\
                 --sigkill|-sk Send a SIGKILL if SIGTERM fail to end the process. 
-                                Default is false.\n"
+                                Default is false.\n\
+Run in backgroud: nohup ./ram_watchdog.sh [OPTIONS] &\n"
 
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
@@ -60,7 +62,7 @@ fi
 CURRENT_UID=$(id -u) # whoami
 MY_PID=$$  #whothisproc
 
-STARTMESSAGE="RAM watchdog v0.1.6\n
+STARTMESSAGE="RAM watchdog $RAMWATCHDOGVERSION\n
               Limit the amount of RAM a process can take.\n
                 Monitoring: ${PROGRAM_NAME:-all processes}\n
                 RAM Limit: $((LIMIT_KB / 1024)) MB\n
@@ -103,7 +105,7 @@ while true; do
         # Wait
         for ((i=0; i<TIMEOUT; i++)); do
           if ! kill -0 $pid 2>/dev/null; then
-            date= date +%H:%M:%S-%d/%m
+            date= $(date +%H:%M:%S-%d/%m)
             echo -e "Process $pid terminated gracefully at $date, after SIGTERM.\n"
             break
           fi
@@ -113,7 +115,7 @@ while true; do
         # Force kill if enabled
         if $SIGKILL; then
             kill -9 $pid
-            date= date +%H:%M:%S-%d/%m
+            date= $(date +%H:%M:%S-%d/%m)
             echo -e "Process $pid terminated forcefully at $date, after SIGKILL.\n"
         fi
 
