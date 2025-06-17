@@ -1,12 +1,12 @@
 #!/bin/bash
 
-RAMWATCHDOGVERSION="v0.1.7"
+RAMWATCHDOGVERSION="v0.1.8"
 
 # Defaults
 PROGRAM_NAME=""
 SLEEP_TIME=5
 TIMEOUT=10
-LIMIT_KB=0
+LIMIT_MB=0
 LIMIT_G_SET=0
 LIMIT_M_SET=0
 ALL_USERS=false
@@ -32,8 +32,8 @@ Run in backgroud: nohup ./ram_watchdog.sh [OPTIONS] &\n"
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --name|-n) PROGRAM_NAME="$2"; shift 2 ;;
-        --limitG|-lg) LIMIT_KB=$(( $2 * 1024 * 1024 )); LIMIT_G_SET=1; shift 2 ;;
-        --limitM|-lm) LIMIT_KB=$(( $2 * 1024 )); LIMIT_M_SET=1; shift 2 ;;
+        --limitG|-lg) LIMIT_MB=$(( $2 * 1024 )); LIMIT_G_SET=1; shift 2 ;;
+        --limitM|-lm) LIMIT_MB="$2"; LIMIT_M_SET=1; shift 2 ;;
         --interval|-i) SLEEP_TIME="$2"; shift 2 ;;
         --timeout|-t) TIMEOUT="$2"; shift 2 ;;
         --allusers|-au) ALL_USERS=true; shift 2 ;; 
@@ -55,17 +55,17 @@ if [[ "$LIMIT_G_SET" -eq 1 && "$LIMIT_M_SET" -eq 1 ]]; then
 fi
 
 # Default to 8GB if neither is set
-if [[ "$LIMIT_KB" -eq 0 ]]; then
-    LIMIT_KB=$((8 * 1024 * 1024))
+if [[ "$LIMIT_MB" -eq 0 ]]; then
+    LIMIT_MB=$((8 * 1024))
 fi
 
 CURRENT_UID=$(id -u) # whoami
 MY_PID=$$  #whothisproc
 
 STARTMESSAGE="RAM watchdog $RAMWATCHDOGVERSION\n
-              Limit the amount of RAM a process can take.\n
+              Limit the amount of RAM a process can allocate.\n
                 Monitoring: ${PROGRAM_NAME:-all processes}\n
-                RAM Limit: $((LIMIT_KB / 1024)) MB\n
+                RAM Limit: $LIMIT_MB MB\n
                 Interval: $SLEEP_TIME seconds\n
                 Timeout: $TIMEOUT seconds\n
                 Monitoring all users processes? $ALL_USERS\n
@@ -96,10 +96,10 @@ while true; do
 
     # if readable check if over LIMIT and SIGTERM
     if [[ -r /proc/$pid/status && -r /proc/$pid/cmdline ]]; then
-      mem_kb=$(grep VmRSS /proc/$pid/status 2>/dev/null | awk '{print $2}')
-      if [[ -n "$mem_kb" && "$mem_kb" -gt "$LIMIT_KB" ]]; then
+      mem_mb=$(awk '/VmRSS/ { print int($2 / 1024) }' /proc/$pid/status 2>/dev/null)
+      if [[ -n "$mem_mb" && "$mem_mb" -gt "$LIMIT_MB" ]]; then
         cmdline=$(tr -d '\0' < /proc/$pid/cmdline)
-        echo "SIGTERM to process $pid ($cmdline) using ${mem_kb}KB"
+        echo "SIGTERM to process $pid ($cmdline) using ${mem_mb}MB"
         kill $pid
         
         # Wait
