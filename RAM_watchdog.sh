@@ -105,7 +105,7 @@ while true; do
         # Wait
         for ((i=0; i<TIMEOUT; i++)); do
           if ! kill -0 $pid 2>/dev/null; then
-            date= $(date +%H:%M:%S-%d/%m)
+            date=$(date +%H:%M:%S-%d/%m)
             echo -e "Process $pid terminated gracefully at $date, after SIGTERM.\n"
             break
           fi
@@ -115,7 +115,7 @@ while true; do
         # Force kill if enabled
         if $SIGKILL; then
             kill -9 $pid
-            date= $(date +%H:%M:%S-%d/%m)
+            date=$(date +%H:%M:%S-%d/%m)
             echo -e "Process $pid terminated forcefully at $date, after SIGKILL.\n"
         fi
 
